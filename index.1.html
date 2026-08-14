@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NgernTurbo — Insurance Match Quiz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0B1F3A;
+  --navy-2:#132C52;
+  --navy-soft:#1E3A66;
+  --pink:#FF6FA0;
+  --pink-2:#FF8FB4;
+  --pink-tint:#FFF0F5;
+  --white:#FFFFFF;
+  --ink:#1B2333;
+  --ink-soft:#5B6478;
+  --line:#E9E4EA;
+  --good:#2E9E6B;
+  --font-display:'Kanit',sans-serif;
+  --font-body:'Sarabun',sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:var(--font-body);
+  background:
+    radial-gradient(circle at 12% 8%, rgba(255,111,160,0.10), transparent 40%),
+    radial-gradient(circle at 90% 85%, rgba(11,31,58,0.06), transparent 45%),
+    #F6F5F8;
+  min-height:100vh;
+  color:var(--ink);
+}
+
+/* ---------- Demo page chrome (stands in for "your website") ---------- */
+.demo-page{max-width:920px;margin:0 auto;padding:64px 24px 200px;}
+.demo-page h1{font-family:var(--font-display);font-size:34px;color:var(--navy);margin:0 0 8px;}
+.demo-page p.lead{color:var(--ink-soft);font-size:16px;line-height:1.6;max-width:560px;margin:0 0 32px;}
+.demo-card{background:var(--white);border:1px solid var(--line);border-radius:18px;padding:28px;box-shadow:0 12px 30px -18px rgba(11,31,58,0.25);}
+.demo-card h2{font-family:var(--font-display);font-size:18px;color:var(--navy);margin:0 0 10px;}
+.demo-card p{color:var(--ink-soft);font-size:14.5px;line-height:1.7;margin:0;}
+.badge-row{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:12.5px;font-family:var(--font-display);font-weight:500;background:var(--pink-tint);color:var(--pink);border:1px solid #FFD7E6;padding:6px 12px;border-radius:999px;}
+
+/* ---------- Launcher ---------- */
+#nt-launcher{
+  position:fixed;right:24px;bottom:24px;z-index:9999;
+  width:72px;height:72px;border-radius:50%;
+  background:linear-gradient(160deg, var(--navy) 0%, var(--navy-2) 100%);
+  border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 14px 28px -10px rgba(11,31,58,0.55);
+  transition:transform .25s ease, box-shadow .25s ease;
+}
+#nt-launcher:hover{transform:translateY(-3px) scale(1.03);box-shadow:0 18px 34px -10px rgba(11,31,58,0.6);}
+#nt-launcher-avatar{width:52px;height:52px;pointer-events:none;}
+#nt-launcher-avatar svg{width:100%;height:100%;display:block;}
+#nt-launcher .nt-ping{
+  position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;
+  background:var(--pink);border:2px solid var(--white);
+}
+#nt-launcher-label{
+  position:fixed;right:106px;bottom:40px;z-index:9998;
+  background:var(--navy);color:var(--white);font-family:var(--font-display);
+  font-size:13px;padding:8px 14px;border-radius:10px;white-space:nowrap;
+  opacity:0;pointer-events:none;transform:translateX(6px);
+  transition:opacity .2s ease, transform .2s ease;
+}
+#nt-launcher-label.show{opacity:1;transform:translateX(0);}
+
+/* ---------- Widget panel ---------- */
+#nt-widget{
+  position:fixed;right:24px;bottom:110px;z-index:9999;
+  width:388px;max-width:calc(100vw - 32px);height:min(640px, calc(100vh - 150px));
+  background:var(--white);border-radius:20px;overflow:hidden;
+  box-shadow:0 30px 70px -20px rgba(11,31,58,0.45);
+  display:flex;flex-direction:column;
+  opacity:0;transform:translateY(16px) scale(0.98);pointer-events:none;
+  transition:opacity .22s ease, transform .22s ease;
+}
+#nt-widget.open{opacity:1;transform:translateY(0) scale(1);pointer-events:auto;}
+
+/* header */
+.nt-header{
+  background:linear-gradient(135deg, var(--navy) 0%, var(--navy-soft) 100%);
+  color:var(--white);padding:16px 16px 14px;flex-shrink:0;
+  display:flex;align-items:center;gap:12px;position:relative;
+}
+.nt-header .nt-avatar{width:40px;height:40px;flex-shrink:0;}
+.nt-header .nt-h-text{flex:1;min-width:0;}
+.nt-header .nt-h-title{font-family:var(--font-display);font-weight:600;font-size:15px;line-height:1.2;}
+.nt-header .nt-h-sub{font-size:12px;color:#C7D3E8;margin-top:2px;}
+.nt-lang-toggle{display:flex;background:rgba(255,255,255,0.12);border-radius:8px;padding:2px;flex-shrink:0;}
+.nt-lang-toggle button{
+  border:none;background:transparent;color:#C7D3E8;font-family:var(--font-display);
+  font-size:12px;font-weight:500;padding:5px 9px;border-radius:6px;cursor:pointer;
+}
+.nt-lang-toggle button.active{background:var(--pink);color:var(--navy);}
+.nt-close{
+  border:none;background:rgba(255,255,255,0.12);color:var(--white);width:28px;height:28px;
+  border-radius:8px;cursor:pointer;font-size:15px;line-height:1;flex-shrink:0;
+}
+
+/* progress */
+.nt-progress{display:flex;gap:4px;padding:10px 16px 0;flex-shrink:0;background:var(--white);}
+.nt-progress .seg{flex:1;height:5px;border-radius:3px;background:#EEE9F0;overflow:hidden;}
+.nt-progress .seg i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--pink),var(--pink-2));transition:width .35s ease;}
+
+/* body / chat */
+.nt-body{flex:1;overflow-y:auto;padding:16px;background:#FCFBFD;}
+.nt-body::-webkit-scrollbar{width:6px;}
+.nt-body::-webkit-scrollbar-thumb{background:#E3DEE6;border-radius:3px;}
+
+.nt-msg{display:flex;gap:8px;margin-bottom:14px;align-items:flex-end;animation:nt-in .25s ease;}
+@keyframes nt-in{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.nt-msg .nt-mini-avatar{width:28px;height:28px;flex-shrink:0;}
+.nt-bubble{
+  background:var(--white);border:1px solid var(--line);color:var(--ink);
+  padding:10px 14px;border-radius:14px 14px 14px 4px;font-size:14px;line-height:1.55;
+  max-width:78%;box-shadow:0 2px 8px -4px rgba(11,31,58,0.12);
+}
+.nt-msg.user{flex-direction:row-reverse;}
+.nt-msg.user .nt-bubble{
+  background:var(--navy);color:var(--white);border:none;
+  border-radius:14px 14px 4px 14px;
+}
+.nt-msg.system .nt-bubble{background:var(--pink-tint);border-color:#FFD7E6;color:var(--navy);font-size:12.5px;}
+
+.nt-typing{display:flex;gap:8px;align-items:center;margin-bottom:14px;}
+.nt-typing .nt-mini-avatar{width:28px;height:28px;}
+.nt-typing .dots{background:var(--white);border:1px solid var(--line);border-radius:14px 14px 14px 4px;padding:11px 14px;display:flex;gap:4px;}
+.nt-typing .dots span{width:6px;height:6px;border-radius:50%;background:#C9C2CE;animation:nt-bounce 1.1s infinite ease-in-out;}
+.nt-typing .dots span:nth-child(2){animation-delay:.15s;}
+.nt-typing .dots span:nth-child(3){animation-delay:.3s;}
+@keyframes nt-bounce{0%,60%,100%{transform:translateY(0);opacity:.5;}30%{transform:translateY(-4px);opacity:1;}}
+
+/* options */
+.nt-options{display:flex;flex-direction:column;gap:8px;margin:8px 0 16px 36px;}
+.nt-opt{
+  text-align:left;background:var(--white);border:1.5px solid var(--line);color:var(--ink);
+  padding:10px 14px;border-radius:12px;font-family:var(--font-body);font-size:13.5px;
+  cursor:pointer;transition:all .15s ease;
+}
+.nt-opt:hover{border-color:var(--pink-2);background:var(--pink-tint);}
+.nt-opt.selected{border-color:var(--pink);background:var(--pink-tint);color:var(--navy);font-weight:600;}
+.nt-opt .chk{display:inline-block;width:16px;height:16px;border-radius:5px;border:1.5px solid #D8D2DB;margin-right:8px;vertical-align:-3px;position:relative;}
+.nt-opt.selected .chk{background:var(--pink);border-color:var(--pink);}
+.nt-opt.selected .chk::after{content:'';position:absolute;left:4px;top:1px;width:4px;height:8px;border:solid var(--white);border-width:0 2px 2px 0;transform:rotate(45deg);}
+.nt-multi-actions{display:flex;justify-content:flex-end;margin:0 0 16px 36px;}
+.nt-next-btn{
+  background:var(--navy);color:var(--white);border:none;padding:8px 18px;border-radius:10px;
+  font-family:var(--font-display);font-size:13px;cursor:pointer;font-weight:500;
+}
+.nt-next-btn:disabled{opacity:.4;cursor:not-allowed;}
+.nt-skip{background:none;border:none;color:var(--ink-soft);font-size:12px;text-decoration:underline;cursor:pointer;margin-left:8px;}
+
+/* results */
+.nt-results{padding:4px 4px 8px;}
+.nt-result-card{
+  background:var(--white);border:1.5px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px;
+  position:relative;overflow:hidden;
+}
+.nt-result-card.top{border-color:var(--pink);box-shadow:0 8px 24px -12px rgba(255,111,160,0.45);}
+.nt-result-tag{
+  position:absolute;top:0;right:0;background:var(--pink);color:var(--white);
+  font-family:var(--font-display);font-size:10.5px;font-weight:600;padding:4px 12px;border-radius:0 0 0 10px;
+}
+.nt-result-top{display:flex;gap:12px;align-items:center;margin-bottom:10px;}
+.nt-match-ring{width:52px;height:52px;flex-shrink:0;position:relative;}
+.nt-match-ring svg{transform:rotate(-90deg);}
+.nt-match-ring .pct{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);font-weight:600;font-size:13px;color:var(--navy);
+}
+.nt-result-name{font-family:var(--font-display);font-weight:600;font-size:15px;color:var(--navy);}
+.nt-result-cat{font-size:11.5px;color:var(--pink);font-weight:600;text-transform:uppercase;letter-spacing:.03em;margin-top:1px;}
+.nt-result-price{font-size:13px;color:var(--ink-soft);margin-top:3px;}
+.nt-result-desc{font-size:13px;line-height:1.6;color:var(--ink);margin:10px 0;}
+.nt-why{background:#FAFAFC;border-radius:10px;padding:10px 12px;margin-top:8px;}
+.nt-why-title{font-size:11.5px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px;}
+.nt-why ul{margin:0;padding-left:16px;}
+.nt-why li{font-size:12.5px;line-height:1.6;color:var(--ink-soft);margin-bottom:2px;}
+.nt-fit-label{display:inline-block;font-size:11px;font-weight:600;color:var(--good);background:#E9F7F0;padding:3px 9px;border-radius:999px;margin-top:8px;}
+
+.nt-disclaimer{
+  background:var(--pink-tint);border:1px solid #FFD7E6;border-radius:12px;padding:12px 14px;
+  font-size:11.5px;line-height:1.6;color:#7A4A61;margin:6px 0 14px;
+}
+.nt-restart{
+  width:100%;background:var(--navy);color:var(--white);border:none;padding:11px;border-radius:12px;
+  font-family:var(--font-display);font-size:13.5px;font-weight:500;cursor:pointer;
+}
+.nt-restart.ghost{background:none;border:1.5px solid var(--line);color:var(--navy);margin-top:8px;}
+
+/* footer */
+.nt-footer{padding:8px 16px 12px;text-align:center;font-size:10.5px;color:#AEA9B4;flex-shrink:0;border-top:1px solid var(--line);background:var(--white);}
+
+@media (max-width:480px){
+  #nt-widget{right:12px;left:12px;bottom:96px;width:auto;}
+  #nt-launcher{right:16px;bottom:16px;}
+}
+</style>
+</head>
+<body>
+
+<!-- =============== Demo host page (stand-in for a real website) =============== -->
+<div class="demo-page">
+  <h1>NgernTurbo</h1>
+  <p class="lead" data-i18n="demoLead">This page is a stand-in for wherever the widget gets embedded — a homepage, a landing page, an app screen. Tap the panda in the corner to try the insurance-match quiz.</p>
+  <div class="demo-card">
+    <h2 data-i18n="demoCardTitle">Not sure which insurance actually fits you?</h2>
+    <p data-i18n="demoCardBody">Answer a few quick questions and get a couple of options worth a closer look, with plain-language reasons and Baht estimates — no long forms, no jargon.</p>
+    <div class="badge-row">
+      <span class="badge" data-i18n="badge1">8–12 quick questions</span>
+      <span class="badge" data-i18n="badge2">EN / TH</span>
+      <span class="badge" data-i18n="badge3">Not a replacement for an advisor</span>
+    </div>
+  </div>
+</div>
+
+<!-- =============== Launcher =============== -->
+<div id="nt-launcher-label" data-i18n="launcherLabel">Find your fit — ask Turbo 🐼</div>
+<button id="nt-launcher" aria-label="Open NgernTurbo insurance quiz">
+  <span class="nt-ping"></span>
+  <div id="nt-launcher-avatar"></div>
+</button>
+
+<!-- =============== Widget =============== -->
+<div id="nt-widget" role="dialog" aria-label="NgernTurbo insurance match quiz">
+  <div class="nt-header">
+    <div class="nt-avatar" id="nt-avatar-slot"></div>
+    <div class="nt-h-text">
+      <div class="nt-h-title">Turbo · NgernTurbo</div>
+      <div class="nt-h-sub" data-i18n="headerSub">Insurance match guide</div>
+    </div>
+    <div class="nt-lang-toggle">
+      <button id="nt-lang-en" class="active">EN</button>
+      <button id="nt-lang-th">TH</button>
+    </div>
+    <button class="nt-close" id="nt-close" aria-label="Close">✕</button>
+  </div>
+  <div class="nt-progress" id="nt-progress"></div>
+  <div class="nt-body" id="nt-body"></div>
+  <div class="nt-footer" data-i18n="footerNote">General guidance only — not financial or insurance advice.</div>
+</div>
+
+<script>
+/* ============================================================
+   NgernTurbo — insurance match quiz widget
+   Self-contained, no build step. Embed by copying this file into
+   an iframe, or lift the #nt-launcher/#nt-widget markup + script
+   directly into an existing page.
+   ============================================================ */
+
+/* ---------------- Panda mascot (inline SVG, reused at 2 sizes) ---------------- */
+const PANDA_SVG = `
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="50" cy="52" r="40" fill="#FFFFFF"/>
+  <circle cx="22" cy="20" r="13" fill="#0B1F3A"/>
+  <circle cx="78" cy="20" r="13" fill="#0B1F3A"/>
+  <circle cx="22" cy="20" r="6" fill="#1E3A66"/>
+  <circle cx="78" cy="20" r="6" fill="#1E3A66"/>
+  <ellipse cx="32" cy="50" rx="12" ry="14" fill="#0B1F3A"/>
+  <ellipse cx="68" cy="50" rx="12" ry="14" fill="#0B1F3A"/>
+  <circle cx="34" cy="49" r="4.2" fill="#FFFFFF"/>
+  <circle cx="66" cy="49" r="4.2" fill="#FFFFFF"/>
+  <circle cx="35" cy="49" r="2.1" fill="#0B1F3A"/>
+  <circle cx="65" cy="49" r="2.1" fill="#0B1F3A"/>
+  <ellipse cx="26" cy="62" rx="6" ry="4" fill="#FF8FB4" opacity="0.55"/>
+  <ellipse cx="74" cy="62" rx="6" ry="4" fill="#FF8FB4" opacity="0.55"/>
+  <ellipse cx="50" cy="63" rx="8" ry="6.5" fill="#0B1F3A"/>
+  <path d="M50 66 Q50 72 44 74 M50 66 Q50 72 56 74" stroke="#0B1F3A" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <circle cx="50" cy="58" r="3" fill="#0B1F3A"/>
+  <path d="M40 40 L47 46 M60 40 L53 46" stroke="#0B1F3A" stroke-width="2.2" stroke-linecap="round"/>
+  <circle cx="50" cy="86" r="7" fill="#FF6FA0"/>
+  <path d="M47 86 l2 2.5 4 -5" stroke="#FFFFFF" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+
+document.getElementById('nt-avatar-slot').innerHTML = PANDA_SVG;
+document.getElementById('nt-launcher-avatar').innerHTML = PANDA_SVG;
+
+/* ---------------- i18n ---------------- */
+const STR = {
+en:{
+  demoLead:"This page is a stand-in for wherever the widget gets embedded — a homepage, a landing page, an app screen. Tap the panda in the corner to try the insurance-match quiz.",
+  demoCardTitle:"Not sure which insurance actually fits you?",
+  demoCardBody:"Answer a few quick questions and get a couple of options worth a closer look, with plain-language reasons and Baht estimates — no long forms, no jargon.",
+  badge1:"8–12 quick questions", badge2:"EN / TH", badge3:"Not a replacement for an advisor",
+  launcherLabel:"Find your fit — ask Turbo 🐼",
+  headerSub:"Insurance match guide",
+  footerNote:"General guidance only — not financial or insurance advice.",
+  intro1:"Hi, I'm Turbo 🐼 — I help people get a starting point for insurance, not a final answer.",
+  intro2:"I'll ask about 10 quick questions, grouped into a few short areas. Nothing too personal — just enough to narrow things down. Ready?",
+  startBtn:"Let's go",
+  next:"Next",
+  skip:"Skip this one",
+  calculating1:"Let me weigh that against a few plan types…",
+  calculating2:"Okay — here's what looks worth a look, based on what you shared.",
+  resultsIntro:"These aren't a verdict, just a shortlist worth exploring further:",
+  worthLooking:"Worth a look",
+  topPick:"Closest match",
+  secondPick:"Also worth a look",
+  monthFrom:"THB / month, approx.",
+  whyTitle:"Why this came up",
+  disclaimer:"Estimates only, not an exact score — think of it as a rough compass, not a lab result. Turbo doesn't replace a licensed insurance advisor; it's worth talking one through before you buy, especially for anything with medical underwriting.",
+  restart:"Start over",
+  talkAdvisor:"Talk to a licensed advisor",
+  greatFit:"Good overall fit",
+  solidFit:"Reasonable fit",
+  worthConsidering:"Worth considering",
+},
+th:{
+  demoLead:"หน้านี้จำลองเว็บไซต์ที่จะฝังวิดเจ็ตนี้ไว้ — หน้าแรก แลนดิ้งเพจ หรือหน้าแอปก็ได้ ลองแตะแพนด้ามุมจอเพื่อทดลองทำแบบทดสอบจับคู่ประกัน",
+  demoCardTitle:"ยังไม่แน่ใจว่าประกันแบบไหนเหมาะกับคุณ?",
+  demoCardBody:"ตอบคำถามสั้น ๆ ไม่กี่ข้อ แล้วรับตัวเลือกที่น่าพิจารณา พร้อมเหตุผลแบบเข้าใจง่ายและช่วงราคาเป็นบาท — ไม่ต้องกรอกฟอร์มยาว ไม่มีศัพท์ยาก",
+  badge1:"8–12 คำถามสั้น ๆ", badge2:"อังกฤษ / ไทย", badge3:"ไม่ใช่การทดแทนที่ปรึกษา",
+  launcherLabel:"หาแผนที่ใช่ — ถามเทอร์โบ 🐼",
+  headerSub:"ผู้ช่วยจับคู่ประกัน",
+  footerNote:"เป็นคำแนะนำทั่วไปเท่านั้น ไม่ใช่คำแนะนำทางการเงินหรือประกันภัย",
+  intro1:"สวัสดีครับ ผมเทอร์โบ 🐼 ผมช่วยให้คุณมีจุดเริ่มต้นในการเลือกประกัน ไม่ใช่คำตอบสุดท้ายนะครับ",
+  intro2:"ผมจะถามประมาณ 10 คำถามสั้น ๆ แบ่งเป็นไม่กี่หมวด ไม่มีอะไรที่เป็นส่วนตัวเกินไป แค่พอให้ผมช่วยแคบตัวเลือกลงได้ พร้อมไหมครับ?",
+  startBtn:"เริ่มกันเลย",
+  next:"ถัดไป",
+  skip:"ข้ามข้อนี้",
+  calculating1:"ขอเวลาชั่งน้ำหนักเทียบกับแผนต่าง ๆ สักครู่นะครับ…",
+  calculating2:"เรียบร้อยครับ นี่คือตัวเลือกที่น่าสนใจจากคำตอบของคุณ",
+  resultsIntro:"นี่ไม่ใช่บทสรุปสุดท้าย แต่เป็นรายชื่อที่น่าไปศึกษาต่อ:",
+  worthLooking:"น่าพิจารณา",
+  topPick:"ใกล้เคียงที่สุด",
+  secondPick:"อีกตัวเลือกที่น่าสนใจ",
+  monthFrom:"บาท / เดือน โดยประมาณ",
+  whyTitle:"เหตุผลที่แนะนำ",
+  disclaimer:"เป็นเพียงตัวเลขประมาณการ ไม่ใช่คะแนนที่แม่นยำแบบวิทยาศาสตร์ ให้คิดว่าเป็นเข็มทิศคร่าว ๆ ไม่ใช่ผลตรวจแล็บ เทอร์โบไม่ได้มาแทนที่ตัวแทนหรือที่ปรึกษาประกันที่มีใบอนุญาต ควรพูดคุยกับผู้เชี่ยวชาญก่อนตัดสินใจซื้อ โดยเฉพาะแผนที่ต้องพิจารณาสุขภาพประกอบ",
+  restart:"เริ่มใหม่",
+  talkAdvisor:"คุยกับที่ปรึกษาที่มีใบอนุญาต",
+  greatFit:"เข้ากับคุณได้ดีโดยรวม",
+  solidFit:"เข้ากันได้พอสมควร",
+  worthConsidering:"น่าลองพิจารณาดู",
+}};
+
+let LANG = 'en';
+function t(key){ return STR[LANG][key] || key; }
+
+/* ---------------- Questions ---------------- */
+// area index 0..4 groups the progress bar into 5 segments (+ optional, folded into segment 5)
+const QUESTIONS = [
+  // ---- A. Customer profile ----
+  { id:'age', area:0, type:'single',
+    q:{en:"First, roughly what life stage are you at?", th:"เริ่มจากคำถามง่าย ๆ — ตอนนี้คุณอยู่ช่วงวัยไหน?"},
+    opts:[
+      {v:'young', en:'Under 25', th:'อายุต่ำกว่า 25 ปี'},
+      {v:'adult', en:'25–34', th:'25–34 ปี'},
+      {v:'mid', en:'35–49', th:'35–49 ปี'},
+      {v:'senior', en:'50+', th:'50 ปีขึ้นไป'},
+    ]},
+  { id:'lifeStage', area:0, type:'single',
+    q:{en:"And which of these sounds most like your situation?", th:"แล้วข้อไหนใกล้เคียงสถานการณ์ของคุณที่สุด?"},
+    opts:[
+      {v:'single', en:'Single, no dependents', th:'โสด ไม่มีคนในอุปการะ'},
+      {v:'partnered', en:'Married or partnered', th:'แต่งงานหรือมีคู่ชีวิต'},
+      {v:'parent', en:'Parent with children', th:'มีบุตรที่ต้องดูแล'},
+      {v:'caregiver', en:'Supporting family members', th:'ดูแลรับผิดชอบสมาชิกในครอบครัว'},
+    ]},
+
+  // ---- B. Protection needs ----
+  { id:'typeInterest', area:1, type:'multi', max:3,
+    q:{en:"Which kinds of protection are you exploring? Pick up to 3.", th:"คุณสนใจความคุ้มครองแบบไหนบ้าง? เลือกได้สูงสุด 3 ข้อ"},
+    opts:[
+      {v:'health', en:'Health / medical', th:'สุขภาพ / ค่ารักษาพยาบาล'},
+      {v:'life', en:'Life insurance', th:'ประกันชีวิต'},
+      {v:'critical', en:'Critical illness', th:'โรคร้ายแรง'},
+      {v:'pa', en:'Personal accident', th:'อุบัติเหตุส่วนบุคคล'},
+      {v:'savings', en:'Savings-linked plan', th:'แผนสะสมทรัพย์'},
+      {v:'unsure', en:"Not sure yet", th:'ยังไม่แน่ใจ'},
+    ]},
+  { id:'extent', area:1, type:'single',
+    q:{en:"How much coverage are you hoping for?", th:"คุณอยากได้ความคุ้มครองระดับไหน?"},
+    opts:[
+      {v:'basic', en:'Just the essentials', th:'แค่พื้นฐานที่จำเป็น'},
+      {v:'balanced', en:'A balanced level of protection', th:'ความคุ้มครองแบบสมดุล'},
+      {v:'max', en:'Maximum coverage, cost is secondary', th:'คุ้มครองสูงสุด ค่าใช้จ่ายเป็นเรื่องรอง'},
+    ]},
+
+  // ---- C. Current situation ----
+  { id:'existing', area:2, type:'single',
+    q:{en:"Do you have any insurance coverage already?", th:"ตอนนี้คุณมีความคุ้มครองประกันอยู่แล้วหรือไม่?"},
+    opts:[
+      {v:'none', en:'None yet', th:'ยังไม่มีเลย'},
+      {v:'some', en:'A little (e.g. employer group plan)', th:'มีบ้าง (เช่น สวัสดิการบริษัท)'},
+      {v:'covered', en:'Fairly well covered already', th:'มีความคุ้มครองค่อนข้างครอบคลุมแล้ว'},
+    ]},
+  { id:'dependents', area:2, type:'single',
+    q:{en:"How many people depend on your income?", th:"มีคนที่พึ่งพารายได้ของคุณกี่คน?"},
+    opts:[
+      {v:'none', en:'No dependents', th:'ไม่มีผู้อยู่ในอุปการะ'},
+      {v:'few', en:'1–2 dependents', th:'1–2 คน'},
+      {v:'many', en:'3+ dependents', th:'3 คนขึ้นไป'},
+    ]},
+
+  // ---- D. Affordability & preferences ----
+  { id:'budget', area:3, type:'single',
+    q:{en:"What's a comfortable monthly budget for premiums?", th:"งบประมาณเบี้ยประกันต่อเดือนที่คุณสบายใจอยู่ที่เท่าไหร่?"},
+    opts:[
+      {v:'low', en:'Under ฿1,000', th:'ต่ำกว่า 1,000 บาท'},
+      {v:'mid', en:'฿1,000–3,000', th:'1,000–3,000 บาท'},
+      {v:'high', en:'฿3,000–7,000', th:'3,000–7,000 บาท'},
+      {v:'top', en:'฿7,000+', th:'7,000 บาทขึ้นไป'},
+    ]},
+  { id:'payStyle', area:3, type:'single',
+    q:{en:"Any preference on how you'd pay?", th:"มีรูปแบบการชำระเบี้ยที่ชอบไหม?"},
+    opts:[
+      {v:'monthly', en:'Pay monthly', th:'ชำระรายเดือน'},
+      {v:'yearly', en:'Pay yearly (usually cheaper overall)', th:'ชำระรายปี (มักถูกกว่าโดยรวม)'},
+      {v:'unsure', en:"Not sure yet", th:'ยังไม่แน่ใจ'},
+    ]},
+
+  // ---- E. Decision preference ----
+  { id:'priority', area:4, type:'single',
+    q:{en:"When choosing, what matters most to you?", th:"ตอนตัดสินใจเลือก คุณให้ความสำคัญกับอะไรมากที่สุด?"},
+    opts:[
+      {v:'price', en:'Lowest price', th:'ราคาต่ำที่สุด'},
+      {v:'coverage', en:'Widest coverage', th:'ความคุ้มครองที่ครอบคลุมที่สุด'},
+      {v:'flex', en:'Flexibility to adjust later', th:'ยืดหยุ่นปรับเปลี่ยนได้ภายหลัง'},
+      {v:'trust', en:'A well-known, trusted provider', th:'บริษัทที่น่าเชื่อถือและมีชื่อเสียง'},
+    ]},
+  { id:'style', area:4, type:'single',
+    q:{en:"Last one on this — how do you like to decide?", th:"ข้อสุดท้ายในหมวดนี้ — คุณชอบตัดสินใจแบบไหน?"},
+    opts:[
+      {v:'compare', en:'I like comparing details myself', th:'ชอบเปรียบเทียบรายละเอียดด้วยตัวเอง'},
+      {v:'simple', en:'I prefer one simple recommendation', th:'อยากได้คำแนะนำง่าย ๆ ตรงประเด็น'},
+    ]},
+
+  // ---- Optional ----
+  { id:'concern', area:4, type:'multi', max:2, optional:true,
+    q:{en:"Optional — if something unexpected happened tomorrow, what financial impact would concern you most?", th:"ข้อเสริม (ไม่บังคับ) — ถ้าพรุ่งนี้เกิดเหตุไม่คาดฝัน อะไรคือผลกระทบทางการเงินที่คุณกังวลที่สุด?"},
+    opts:[
+      {v:'medical', en:'Medical expenses', th:'ค่ารักษาพยาบาล'},
+      {v:'income', en:'Loss of income', th:'สูญเสียรายได้'},
+      {v:'family', en:'Supporting my family', th:'ภาระดูแลครอบครัว'},
+      {v:'property', en:'Property / asset damage', th:'ความเสียหายต่อทรัพย์สิน'},
+      {v:'debt', en:'Debt or financial obligations', th:'หนี้สินหรือภาระทางการเงิน'},
+      {v:'notsure', en:"I'm not sure", th:'ไม่แน่ใจ'},
+    ]},
+];
+
+/* ---------------- Insurance packages (illustrative demo data) ---------------- */
+const PACKAGES = [
+  { id:'health-saver', category:{en:'Health',th:'สุขภาพ'}, type:'health', extent:'basic', budget:['low','mid'],
+    name:{en:'Health Saver',th:'เฮลท์ เซฟเวอร์'}, price:'590–1,200',
+    desc:{en:'Covers hospital room & board plus core in-patient treatment, with a lean monthly premium built for people just getting started with health cover.',
+          th:'คุ้มครองค่าห้องพักและการรักษาแบบผู้ป่วยใน เบี้ยประกันไม่สูง เหมาะสำหรับคนที่เพิ่งเริ่มมีประกันสุขภาพ'},
+    concerns:['medical'], dependents:['none','few'] },
+  { id:'health-complete', category:{en:'Health',th:'สุขภาพ'}, type:'health', extent:'max', budget:['high','top'],
+    name:{en:'Health Complete',th:'เฮลท์ คอมพลีท'}, price:'2,500–5,500',
+    desc:{en:'Broader in-patient and out-patient coverage with higher annual limits, aimed at people who want fewer out-of-pocket surprises.',
+          th:'คุ้มครองทั้งผู้ป่วยในและผู้ป่วยนอกในวงเงินที่สูงขึ้น เหมาะกับคนที่อยากลดความเสี่ยงค่าใช้จ่ายที่ไม่คาดคิด'},
+    concerns:['medical'], dependents:['none','few','many'] },
+  { id:'life-basic', category:{en:'Life',th:'ประกันชีวิต'}, type:'life', extent:'basic', budget:['low','mid'],
+    name:{en:'Life Basic Term',th:'ไลฟ์ เบสิค เทอม'}, price:'350–900',
+    desc:{en:'Straightforward term life protection with a fixed payout to named beneficiaries — no savings component, just the core protection.',
+          th:'ประกันชีวิตแบบชั่วระยะเวลา จ่ายผลประโยชน์ก้อนให้ผู้รับผลประโยชน์ ไม่มีส่วนออมทรัพย์ เน้นความคุ้มครองล้วน ๆ'},
+    concerns:['family','debt'], dependents:['none','few','many'] },
+  { id:'life-family', category:{en:'Life',th:'ประกันชีวิต'}, type:'life', extent:'balanced', budget:['mid','high'],
+    name:{en:'Life Family Shield',th:'ไลฟ์ แฟมิลี่ ชิลด์'}, price:'1,200–3,000',
+    desc:{en:'Term life with an income-replacement style payout structure, designed with people who have dependents in mind.',
+          th:'ประกันชีวิตชั่วระยะเวลาที่ออกแบบให้จ่ายผลประโยชน์ช่วยทดแทนรายได้ เหมาะกับผู้ที่มีคนในอุปการะ'},
+    concerns:['family','income'], dependents:['few','many'] },
+  { id:'critical-plus', category:{en:'Critical Illness',th:'โรคร้ายแรง'}, type:'critical', extent:'balanced', budget:['mid','high'],
+    name:{en:'Critical Care Plus',th:'คริติคอล แคร์ พลัส'}, price:'900–2,200',
+    desc:{en:'Pays a lump sum on diagnosis of covered critical illnesses, giving breathing room to cover treatment or lost income during recovery.',
+          th:'จ่ายเงินก้อนเมื่อตรวจพบโรคร้ายแรงที่คุ้มครอง ช่วยผ่อนหนักเป็นเบาระหว่างรักษาตัวหรือหยุดงาน'},
+    concerns:['medical','income'], dependents:['none','few','many'] },
+  { id:'pa-guard', category:{en:'Personal Accident',th:'อุบัติเหตุ'}, type:'pa', extent:'basic', budget:['low','mid'],
+    name:{en:'Personal Accident Guard',th:'พีเอ การ์ด'}, price:'200–600',
+    desc:{en:'Low-cost accident-only cover for injury, disability or accidental death — a light way to close a specific gap.',
+          th:'ประกันอุบัติเหตุเบี้ยต่ำ คุ้มครองการบาดเจ็บ ทุพพลภาพ หรือเสียชีวิตจากอุบัติเหตุ ปิดช่องว่างเฉพาะจุดในงบไม่สูง'},
+    concerns:['medical','property'], dependents:['none','few'] },
+  { id:'complete-bundle', category:{en:'Bundle',th:'แผนรวม'}, type:'bundle', extent:'max', budget:['high','top'],
+    name:{en:'Complete Protection Bundle',th:'คอมพลีท โพรเทคชั่น บันเดิล'}, price:'4,000–9,000',
+    desc:{en:'Combines life, health and accident cover under one plan for people who want broad protection without juggling several policies.',
+          th:'รวมความคุ้มครองชีวิต สุขภาพ และอุบัติเหตุไว้ในแผนเดียว เหมาะกับคนที่อยากได้ความคุ้มครองครอบคลุมโดยไม่ต้องจัดการหลายกรมธรรม์'},
+    concerns:['medical','family','income','debt'], dependents:['few','many'] },
+  { id:'smart-saver', category:{en:'Savings-linked',th:'สะสมทรัพย์'}, type:'savings', extent:'balanced', budget:['mid','high','top'],
+    name:{en:'Smart Saver Endowment',th:'สมาร์ท เซฟเวอร์'}, price:'1,500–4,000',
+    desc:{en:'Life protection paired with a savings/maturity payout, for people who want protection and a long-term savings habit together.',
+          th:'ประกันชีวิตควบคู่กับเงินคืนเมื่อครบสัญญา เหมาะกับคนที่อยากได้ทั้งความคุ้มครองและวินัยการออมระยะยาว'},
+    concerns:['family','debt'], dependents:['few','many'] },
+  { id:'income-shield', category:{en:'Income Protection',th:'คุ้มครองรายได้'}, type:'income', extent:'balanced', budget:['mid','high'],
+    name:{en:'Income Shield',th:'อินคัม ชิลด์'}, price:'800–1,800',
+    desc:{en:'Replaces a portion of income if illness or injury keeps you from working for an extended stretch.',
+          th:'ทดแทนรายได้บางส่วนหากเจ็บป่วยหรือบาดเจ็บจนไม่สามารถทำงานได้เป็นเวลานาน'},
+    concerns:['income'], dependents:['none','few','many'] },
+  { id:'property-care', category:{en:'Property',th:'ทรัพย์สิน'}, type:'property', extent:'balanced', budget:['low','mid','high'],
+    name:{en:'Property & Asset Care',th:'พร็อพเพอร์ตี้ แอนด์ แอสเซ็ท แคร์'}, price:'500–1,500',
+    desc:{en:'Covers damage to your home or key assets from fire, theft and a set of named perils.',
+          th:'คุ้มครองความเสียหายต่อบ้านหรือทรัพย์สินสำคัญจากไฟไหม้ การโจรกรรม และภัยอื่น ๆ ที่ระบุไว้'},
+    concerns:['property'], dependents:['none','few','many'] },
+];
+
+/* ---------------- Matching engine ----------------
+   Deterministic weighted score, rounded to nearest 5, capped below 100
+   so it never reads as a scientifically exact figure. */
+function scorePackage(pkg, answers){
+  let score = 40; // baseline so nothing looks like a zero/rejected plan
+  let maxAdd = 60;
+  let add = 0;
+
+  // type interest (heaviest single factor)
+  if(answers.typeInterest && answers.typeInterest.length){
+    if(answers.typeInterest.includes(pkg.type)) add += 22;
+    else if(pkg.type==='bundle' && answers.typeInterest.length>=2) add += 14;
+    else if(answers.typeInterest.includes('unsure')) add += 8;
+  }
+
+  // concern -> package concern tags
+  const concernSrc = (answers.concern && answers.concern.length) ? answers.concern : [];
+  if(concernSrc.length){
+    const overlap = concernSrc.filter(c=>pkg.concerns.includes(c)).length;
+    add += Math.min(overlap * 8, 16);
+  }
+
+  // extent match
+  if(answers.extent === pkg.extent) add += 10;
+  else if(Math.abs(['basic','balanced','max'].indexOf(answers.extent) - ['basic','balanced','max'].indexOf(pkg.extent)) === 1) add += 4;
+
+  // budget fit
+  if(pkg.budget.includes(answers.budget)) add += 10;
+  else add -= 6;
+
+  // dependents fit
+  if(pkg.dependents.includes(answers.dependents)) add += 4;
+
+  // decision priority tie-breakers
+  if(answers.priority === 'price' && pkg.budget[0] === (['low','mid','high','top'].includes(answers.budget) ? pkg.budget[0] : pkg.budget[0])){
+    if(pkg.budget.includes('low')) add += 4;
+  }
+  if(answers.priority === 'coverage' && pkg.extent === 'max') add += 5;
+  if(answers.priority === 'coverage' && pkg.type === 'bundle') add += 3;
+
+  // existing coverage: if already well covered, nudge toward gap-fillers (PA, critical) over broad health
+  if(answers.existing === 'covered' && (pkg.type==='pa' || pkg.type==='critical')) add += 4;
+  if(answers.existing === 'none' && (pkg.type==='health' || pkg.type==='bundle')) add += 3;
+
+  add = Math.max(0, Math.min(add, maxAdd));
+  let total = score + add;
+  total = Math.min(total, 92); // never claim a perfect/near-perfect match
+  total = Math.round(total/5)*5;
+  return total;
+}
+
+function fitLabel(pct){
+  if(pct >= 80) return t('greatFit');
+  if(pct >= 65) return t('solidFit');
+  return t('worthConsidering');
+}
+
+function whyReasons(pkg, answers){
+  const reasons = [];
+  const L = LANG;
+  if(answers.typeInterest && answers.typeInterest.includes(pkg.type)){
+    reasons.push(L==='en'
+      ? `Matches the ${pkg.category.en.toLowerCase()} category you said you're exploring.`
+      : `ตรงกับหมวด${pkg.category.th}ที่คุณสนใจ`);
+  }
+  const concernSrc = (answers.concern && answers.concern.length) ? answers.concern : [];
+  const overlap = concernSrc.filter(c=>pkg.concerns.includes(c));
+  if(overlap.length){
+    reasons.push(L==='en'
+      ? `Speaks to what you flagged as a concern: ${overlap.map(o=>concernLabel(o,'en')).join(', ')}.`
+      : `ตอบโจทย์สิ่งที่คุณกังวล: ${overlap.map(o=>concernLabel(o,'th')).join(', ')}`);
+  }
+  if(pkg.budget.includes(answers.budget)){
+    reasons.push(L==='en'
+      ? `Falls inside the monthly budget range you picked.`
+      : `อยู่ในช่วงงบประมาณต่อเดือนที่คุณเลือก`);
+  }
+  if(answers.dependents !== 'none' && pkg.dependents.includes(answers.dependents)){
+    reasons.push(L==='en'
+      ? `Fits a household with people depending on your income.`
+      : `เหมาะกับครัวเรือนที่มีคนพึ่งพารายได้ของคุณ`);
+  }
+  if(!reasons.length){
+    reasons.push(L==='en' ? `A reasonable general-purpose option based on your answers.` : `เป็นตัวเลือกทั่วไปที่พอเหมาะกับคำตอบของคุณ`);
+  }
+  return reasons.slice(0,3);
+}
+function concernLabel(v, lang){
+  const q = QUESTIONS.find(q=>q.id==='concern');
+  const o = q.opts.find(o=>o.v===v);
+  return o ? o[lang] : v;
+}
+
+/* ---------------- Widget state & flow control ---------------- */
+const launcher = document.getElementById('nt-launcher');
+const launcherLabel = document.getElementById('nt-launcher-label');
+const widget = document.getElementById('nt-widget');
+const body = document.getElementById('nt-body');
+const progressEl = document.getElementById('nt-progress');
+const closeBtn = document.getElementById('nt-close');
+
+let state = { step: -1, answers: {}, started:false };
+
+function buildProgress(){
+  progressEl.innerHTML = '';
+  for(let i=0;i<5;i++){
+    const seg = document.createElement('div');
+    seg.className='seg';
+    seg.innerHTML = '<i></i>';
+    progressEl.appendChild(seg);
+  }
+}
+function updateProgress(){
+  const total = QUESTIONS.length;
+  const segs = progressEl.querySelectorAll('.seg i');
+  const answeredCount = Math.min(state.step, total);
+  // proportion of questions answered maps roughly across 5 segments by area
+  for(let i=0;i<5;i++){
+    const areaQs = QUESTIONS.filter(q=>q.area===i);
+    const doneInArea = areaQs.filter(q => QUESTIONS.indexOf(q) < state.step).length;
+    const pct = areaQs.length ? Math.min(100, (doneInArea/areaQs.length)*100) : 0;
+    segs[i].style.width = pct+'%';
+  }
+}
+
+function scrollBottom(){ body.scrollTop = body.scrollHeight; }
+
+function addBotMessage(text, opts={}){
+  const wrap = document.createElement('div');
+  wrap.className = 'nt-msg bot';
+  wrap.innerHTML = `<div class="nt-mini-avatar">${PANDA_SVG}</div><div class="nt-bubble">${text}</div>`;
+  body.appendChild(wrap);
+  scrollBottom();
+  return wrap;
+}
+function addUserMessage(text){
+  const wrap = document.createElement('div');
+  wrap.className = 'nt-msg user';
+  wrap.innerHTML = `<div class="nt-bubble">${text}</div>`;
+  body.appendChild(wrap);
+  scrollBottom();
+}
+function showTyping(cb, delay=650){
+  const wrap = document.createElement('div');
+  wrap.className = 'nt-typing';
+  wrap.innerHTML = `<div class="nt-mini-avatar">${PANDA_SVG}</div><div class="dots"><span></span><span></span><span></span></div>`;
+  body.appendChild(wrap);
+  scrollBottom();
+  setTimeout(()=>{ wrap.remove(); cb(); }, delay);
+}
+
+function resetWidget(){
+  state = { step: -1, answers: {}, started:false };
+  body.innerHTML = '';
+  buildProgress();
+  updateProgress();
+  startIntro();
+}
+
+function startIntro(){
+  showTyping(()=>{
+    addBotMessage(t('intro1'));
+    showTyping(()=>{
+      addBotMessage(t('intro2'));
+      const actions = document.createElement('div');
+      actions.className='nt-multi-actions';
+      actions.innerHTML = `<button class="nt-next-btn" id="nt-start-btn">${t('startBtn')}</button>`;
+      body.appendChild(actions);
+      scrollBottom();
+      document.getElementById('nt-start-btn').onclick = ()=>{ actions.remove(); nextQuestion(); };
+    }, 550);
+  }, 500);
+}
+
+function nextQuestion(){
+  state.step += 1;
+  updateProgress();
+  if(state.step >= QUESTIONS.length){
+    return showResults();
+  }
+  const q = QUESTIONS[state.step];
+  showTyping(()=>{
+    addBotMessage(q.q[LANG]);
+    renderOptions(q);
+  }, 500);
+}
+
+function renderOptions(q){
+  const optWrap = document.createElement('div');
+  optWrap.className = 'nt-options';
+  let selected = [];
+
+  q.opts.forEach(o=>{
+    const btn = document.createElement('button');
+    btn.className = 'nt-opt';
+    btn.innerHTML = (q.type==='multi' ? '<span class="chk"></span>' : '') + o[LANG];
+    btn.onclick = ()=>{
+      if(q.type==='single'){
+        answerQuestion(q, o.v, o[LANG]);
+      } else {
+        const idx = selected.indexOf(o.v);
+        if(idx>-1){ selected.splice(idx,1); btn.classList.remove('selected'); }
+        else{
+          if(q.max && selected.length>=q.max) return;
+          selected.push(o.v); btn.classList.add('selected');
+        }
+        nextBtn.disabled = selected.length===0;
+      }
+    };
+    optWrap.appendChild(btn);
+  });
+  body.appendChild(optWrap);
+
+  const actions = document.createElement('div');
+  actions.className = 'nt-multi-actions';
+  let nextBtn;
+  if(q.type==='multi'){
+    nextBtn = document.createElement('button');
+    nextBtn.className = 'nt-next-btn';
+    nextBtn.textContent = t('next');
+    nextBtn.disabled = true;
+    nextBtn.onclick = ()=>{
+      const labels = q.opts.filter(o=>selected.includes(o.v)).map(o=>o[LANG]).join(', ');
+      answerQuestion(q, selected.slice(), labels, optWrap, actions);
+    };
+    actions.appendChild(nextBtn);
+  }
+  if(q.optional){
+    const skipBtn = document.createElement('button');
+    skipBtn.className = 'nt-skip';
+    skipBtn.textContent = t('skip');
+    skipBtn.onclick = ()=>{ answerQuestion(q, q.type==='multi'?[]:null, LANG==='en'?'Skipped':'ข้าม', optWrap, actions); };
+    actions.appendChild(skipBtn);
+  }
+  if(actions.children.length) body.appendChild(actions);
+  scrollBottom();
+}
+
+function answerQuestion(q, value, displayLabel, optWrapEl, actionsEl){
+  state.answers[q.id] = value;
+  if(optWrapEl) optWrapEl.querySelectorAll('.nt-opt').forEach(b=>b.disabled=true);
+  if(actionsEl) actionsEl.remove();
+  else { const ow = body.querySelector('.nt-options:last-of-type'); if(ow) ow.querySelectorAll('.nt-opt').forEach(b=>b.disabled=true); }
+  addUserMessage(displayLabel);
+  nextQuestion();
+}
+
+function showResults(){
+  showTyping(()=>{
+    addBotMessage(t('calculating1'));
+    showTyping(()=>{
+      addBotMessage(t('calculating2'));
+      renderResultsCard();
+    }, 900);
+  }, 500);
+}
+
+function renderResultsCard(){
+  const answers = state.answers;
+  const scored = PACKAGES.map(p=>({pkg:p, score:scorePackage(p, answers)}))
+    .sort((a,b)=>b.score-a.score);
+  const picks = scored.slice(0,2);
+
+  const container = document.createElement('div');
+  container.className = 'nt-results';
+
+  const introMsg = document.createElement('div');
+  introMsg.className = 'nt-msg bot';
+  introMsg.innerHTML = `<div class="nt-mini-avatar">${PANDA_SVG}</div><div class="nt-bubble">${t('resultsIntro')}</div>`;
+  container.appendChild(introMsg);
+
+  picks.forEach((item, idx)=>{
+    const p = item.pkg;
+    const pct = item.score;
+    const circumference = 2*Math.PI*20;
+    const dash = (pct/100)*circumference;
+    const card = document.createElement('div');
+    card.className = 'nt-result-card' + (idx===0 ? ' top':'');
+    card.innerHTML = `
+      <div class="nt-result-tag">${idx===0 ? t('topPick') : t('secondPick')}</div>
+      <div class="nt-result-top">
+        <div class="nt-match-ring">
+          <svg width="52" height="52" viewBox="0 0 52 52">
+            <circle cx="26" cy="26" r="20" fill="none" stroke="#EEE9F0" stroke-width="5"/>
+            <circle cx="26" cy="26" r="20" fill="none" stroke="${idx===0 ? '#FF6FA0':'#0B1F3A'}" stroke-width="5"
+              stroke-dasharray="${dash} ${circumference}" stroke-linecap="round"/>
+          </svg>
+          <div class="pct">~${pct}%</div>
+        </div>
+        <div>
+          <div class="nt-result-name">${p.name[LANG]}</div>
+          <div class="nt-result-cat">${p.category[LANG]}</div>
+          <div class="nt-result-price">฿${p.price} ${t('monthFrom')}</div>
+        </div>
+      </div>
+      <div class="nt-result-desc">${p.desc[LANG]}</div>
+      <div class="nt-why">
+        <div class="nt-why-title">${t('whyTitle')}</div>
+        <ul>${whyReasons(p, answers).map(r=>`<li>${r}</li>`).join('')}</ul>
+      </div>
+      <div class="nt-fit-label">${fitLabel(pct)}</div>
+    `;
+    container.appendChild(card);
+  });
+
+  const disc = document.createElement('div');
+  disc.className = 'nt-disclaimer';
+  disc.textContent = t('disclaimer');
+  container.appendChild(disc);
+
+  const restart = document.createElement('button');
+  restart.className = 'nt-restart';
+  restart.textContent = t('restart');
+  restart.onclick = resetWidget;
+  container.appendChild(restart);
+
+  const advisor = document.createElement('button');
+  advisor.className = 'nt-restart ghost';
+  advisor.textContent = t('talkAdvisor');
+  advisor.onclick = ()=>{ advisor.textContent = LANG==='en' ? 'Noted — a real widget would route this to an advisor.' : 'รับทราบ — ในเวอร์ชันจริงระบบจะเชื่อมไปยังที่ปรึกษา'; advisor.disabled=true; };
+  container.appendChild(advisor);
+
+  body.appendChild(container);
+  scrollBottom();
+}
+
+/* ---------------- Open / close / language ---------------- */
+function openWidget(){
+  widget.classList.add('open');
+  launcherLabel.classList.remove('show');
+  if(!state.started){
+    state.started = true;
+    buildProgress();
+    startIntro();
+  }
+}
+function closeWidget(){ widget.classList.remove('open'); }
+
+launcher.addEventListener('click', ()=>{
+  widget.classList.contains('open') ? closeWidget() : openWidget();
+});
+launcher.addEventListener('mouseenter', ()=>launcherLabel.classList.add('show'));
+launcher.addEventListener('mouseleave', ()=>launcherLabel.classList.remove('show'));
+closeBtn.addEventListener('click', closeWidget);
+
+document.getElementById('nt-lang-en').addEventListener('click', ()=>setLang('en'));
+document.getElementById('nt-lang-th').addEventListener('click', ()=>setLang('th'));
+function setLang(lang){
+  if(lang===LANG) return;
+  LANG = lang;
+  document.getElementById('nt-lang-en').classList.toggle('active', lang==='en');
+  document.getElementById('nt-lang-th').classList.toggle('active', lang==='th');
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    el.textContent = t(el.getAttribute('data-i18n'));
+  });
+  // restart the in-progress conversation cleanly in the new language
+  if(state.started){ resetWidget(); }
+}
+
+// initialize static i18n text on host page
+document.querySelectorAll('[data-i18n]').forEach(el=>{ el.textContent = t(el.getAttribute('data-i18n')); });
+buildProgress();
+</script>
+</body>
+</html>
